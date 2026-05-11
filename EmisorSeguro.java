@@ -10,44 +10,39 @@ public class EmisorSeguro {
 
     public static void main(String[] args) throws Exception {
 
-        // 1. Generar clave AES de 128 bits
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128);
-        SecretKey clave = keyGen.generateKey();
+        //Generar clave simetrica AES de 128 bits
+        KeyGenerator generador = KeyGenerator.getInstance("AES");
+        generador.init(128);
+        SecretKey clavePrivada = generador.generateKey();
 
-        System.out.println("Clave generada (Base64): " +
-                Base64.getEncoder().encodeToString(clave.getEncoded()));
+        Cipher cifrador = Cipher.getInstance("AES");
+        cifrador.init(Cipher.ENCRYPT_MODE, clavePrivada);
 
-        // 2. Texto a cifrar
-        String mensaje = "La reunión empieza a las 10:30";
+        //Se declara el mensaje cifrado
+        String mensaje = "La reunion empieza a las 10:30";
+        byte[] mensajeBytes = mensaje.getBytes();
+        byte[] mensajeCifrado = cifrador.doFinal(mensajeBytes);
+        byte[] claveBytes = clavePrivada.getEncoded();
 
-        // 3. Cifrar mensaje
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, clave);
-        byte[] mensajeCifrado = cipher.doFinal(mensaje.getBytes());
+        ServerSocket servidor = new ServerSocket(6000);
+        System.out.println("Servidor esperando conexion en puerto 6000");
 
-        System.out.println("Mensaje cifrado (Base64): " +
-                Base64.getEncoder().encodeToString(mensajeCifrado));
+        Socket conexion = servidor.accept();
+        DataOutputStream out = new DataOutputStream(conexion.getOutputStream());
+        
+        
+        out.writeInt(clavePrivada.getEncoded().length);
+        out.write(clavePrivada.getEncoded());
 
-        // 4. Abrir ServerSocket y enviar clave + mensaje cifrado
-        ServerSocket server = new ServerSocket(6000);
-        System.out.println("Esperando conexión del receptor...");
-
-        Socket socket = server.accept();
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-        // Enviar clave
-        out.writeInt(clave.getEncoded().length);
-        out.write(clave.getEncoded());
-
-        // Enviar mensaje cifrado
         out.writeInt(mensajeCifrado.length);
         out.write(mensajeCifrado);
 
-        System.out.println("Datos enviados correctamente.");
+        System.out.println("Datos enviados correctamente");
 
         out.close();
-        socket.close();
-        server.close();
+        conexion.close();
+        servidor.close();
+
     }
+
 }

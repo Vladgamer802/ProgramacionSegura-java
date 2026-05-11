@@ -9,38 +9,32 @@ public class ReceptorSeguro {
 
     public static void main(String[] args) throws Exception {
 
-        // 1. Conectarse al emisor
-        Socket socket = new Socket("localhost", 6000);
-        DataInputStream in = new DataInputStream(socket.getInputStream());
+        //Se conecta a servidor
+        Socket conexion = new Socket("localhost", 6000);
+        DataInputStream in = new DataInputStream(conexion.getInputStream());
 
-        // 2. Leer clave
-        int tamClave = in.readInt();
-        byte[] claveBytes = new byte[tamClave];
+        //Se reciben los datos cifrados
+        int tamañoClave = in.readInt();
+        byte [] claveBytes = new byte[tamañoClave];
         in.readFully(claveBytes);
-
-        System.out.println("Clave recibida (Base64): " +
-                Base64.getEncoder().encodeToString(claveBytes));
-
-        // Reconstruir clave AES
-        SecretKey clave = new SecretKeySpec(claveBytes, "AES");
-
-        // 3. Leer mensaje cifrado
-        int tamMensaje = in.readInt();
-        byte[] mensajeCifrado = new byte[tamMensaje];
+        
+        int tamañoMensaje = in.readInt();
+        byte[] mensajeCifrado = new byte[tamañoMensaje];
         in.readFully(mensajeCifrado);
 
-        System.out.println("Mensaje cifrado recibido (Base64): " +
-                Base64.getEncoder().encodeToString(mensajeCifrado));
 
-        // 4. Descifrar mensaje
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, clave);
-        byte[] mensajeDescifrado = cipher.doFinal(mensajeCifrado);
+        SecretKey claveRecibida = new SecretKeySpec(claveBytes, "AES");
+        //Se descifra el mensaje
+        Cipher cifrador = Cipher.getInstance("AES");
+        cifrador.init(Cipher.DECRYPT_MODE, claveRecibida);
 
-        System.out.println("Mensaje descifrado: " +
-                new String(mensajeDescifrado));
+        byte[] mensajeDescifrado = cifrador.doFinal(mensajeCifrado);
+        String cadenaMensaje = new String(mensajeDescifrado);
 
-        in.close();
-        socket.close();
+        System.out.println("Clave recibida: " + Base64.getEncoder().encodeToString(claveBytes));
+        System.out.println("Mensaje cifrado recibido: " + Base64.getEncoder().encodeToString(mensajeCifrado));
+        System.out.println("Mensaje recibido: " + cadenaMensaje);
+
+
     }
 }
